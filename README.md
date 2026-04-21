@@ -7,7 +7,7 @@ Switchboard is the LAN coordination stack currently used across four Debian VMs 
 - `necto` (`192.168.2.11`): Claude-backed network intelligence VM
 - `vega` (`192.168.2.15`): Claude-backed coordination/admin VM
 
-This repository captures the live software that makes that setup work:
+This repository captures the live software that makes that setup work and repackages it into a portable source tree.
 
 - the `Switchboard` chat server (`chat.py`)
 - the shared multi-agent listener/respond/watchdog scripts
@@ -47,6 +47,14 @@ This repo reflects the live runtime layout observed on 2026-04-20:
 - automatic routing of system/status noise into `debug`
 - per-channel HTTP history endpoints
 
+It now supports environment-based paths for replay/history files:
+
+- `SWITCHBOARD_BASE_DIR`
+- `SWITCHBOARD_SHARED_LOG`
+- `SWITCHBOARD_LEGACY_REPLAY_LOG`
+- `SWITCHBOARD_REPLAY_JSONL`
+- `SWITCHBOARD_SECRET_KEY`
+
 ### 2. Shared Agent Stack
 
 `agents/` contains the common scripts used by the agent VMs:
@@ -81,6 +89,7 @@ Install chat dependencies and run the server:
 ```bash
 cd switchboard
 pip install -r requirements.txt
+export SWITCHBOARD_BASE_DIR="$HOME/shared"
 python3 chat.py
 ```
 
@@ -93,7 +102,7 @@ cp agents/agent_*.py /mnt/shared/
 pip install -r agents/requirements.txt
 ```
 
-Then install the appropriate `agent_config.json` template from `configs/agents/` and the cron entries from `configs/cron/`.
+Then install and adapt the appropriate `agent_config.json` template from `configs/agents/` and the cron entries from `configs/cron/`.
 
 ### netwatch
 
@@ -108,3 +117,4 @@ cd netwatch
 - `proxmox` is part of the deployment context, but no Switchboard-specific source code was found there.
 - The repo intentionally omits `~/.netwatch`, chat logs, vault files, `.ssh`, and archived pre-refactor experiments.
 - `keystone` uses the Codex responder backend; `necto` and `vega` use the Claude responder backend.
+- The `configs/` files reflect one working deployment and should be treated as examples, not drop-in universal defaults.

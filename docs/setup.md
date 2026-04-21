@@ -13,6 +13,7 @@ Install:
 ```bash
 cd switchboard
 pip install -r requirements.txt
+export SWITCHBOARD_BASE_DIR="$HOME/shared"
 python3 chat.py
 ```
 
@@ -27,6 +28,13 @@ For each of `keystone`, `necto`, and `vega`:
 3. Install the host-specific `agent_config.json` template from `configs/agents/`.
 4. Apply the matching cron template from `configs/cron/`.
 5. Ensure `/mnt/shared` is mounted from `human`.
+
+Before deployment, update the config templates for your own:
+
+- IP addresses
+- usernames and home paths
+- model binaries and model names
+- mount locations
 
 ## 3. netwatch
 

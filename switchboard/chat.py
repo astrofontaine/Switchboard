@@ -1,4 +1,4 @@
-"""LAN chatroom with channel-aware history replay."""
+"""Switchboard chat server with channel-aware history replay."""
 import hashlib
 import json
 import os
@@ -14,14 +14,20 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "lanparty"
 sio = SocketIO(app, async_mode="threading", cors_allowed_origins="*")
 
+BASE_DIR = os.environ.get("SWITCHBOARD_BASE_DIR", os.path.expanduser("~/shared"))
+SECRET_KEY = os.environ.get("SWITCHBOARD_SECRET_KEY")
+
 USERS = {}
 CHANNELS = ["main", "debug", "ops", "agents"]
 DEFAULT_CHANNEL = "main"
 AGENT_NAMES = {"keystone", "vega", "necto"}
 HISTORY_SCAN_LINES = 8000
-SHARED_LOG = "/home/longshot/shared/UNIVERSAL_CHAT.log"
-LEGACY_REPLAY_LOG = "/home/longshot/shared/CHAT_REPLAY.log"
-REPLAY_JSONL = "/home/longshot/shared/CHAT_REPLAY.jsonl"
+SHARED_LOG = os.environ.get("SWITCHBOARD_SHARED_LOG", os.path.join(BASE_DIR, "UNIVERSAL_CHAT.log"))
+LEGACY_REPLAY_LOG = os.environ.get("SWITCHBOARD_LEGACY_REPLAY_LOG", os.path.join(BASE_DIR, "CHAT_REPLAY.log"))
+REPLAY_JSONL = os.environ.get("SWITCHBOARD_REPLAY_JSONL", os.path.join(BASE_DIR, "CHAT_REPLAY.jsonl"))
+
+if SECRET_KEY:
+    app.config["SECRET_KEY"] = SECRET_KEY
 
 _SEEN = {}
 _SEEN_LOCK = threading.Lock()
@@ -167,7 +173,7 @@ def _load_history():
 _load_history()
 
 PAGE = """<!doctype html><html><head>
-<meta charset="utf-8"><title>LAN Chat</title>
+<meta charset="utf-8"><title>Switchboard</title>
 <style>
   :root{
     --bg:#101317;--panel:#141920;--line:#273243;--text:#d7e1ee;--muted:#7f91a7;

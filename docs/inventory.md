@@ -1,6 +1,7 @@
 # Inventory
 
 This repository was curated from the live multi-VM environment on 2026-04-20.
+It is intentionally a cleaned source snapshot, not a byte-for-byte filesystem export.
 
 ## Included Sources
 
