@@ -1,0 +1,28 @@
+{
+  "name": "keystone",
+  "vmid": "106",
+  "host_suffix": ".14",
+  "peers": ["necto", "vega"],
+  "chat_url": "http://192.168.2.16:5000",
+  "local_log": "/home/longshot/keystone/agent_chat.log",
+  "universal_log": "/mnt/shared/UNIVERSAL_CHAT.log",
+  "status_flag": "/tmp/agent_send_status.flag",
+  "pos_file": "/tmp/agent_chat_pos.txt",
+  "backoff_file": "/tmp/agent_watchdog_backoff.txt",
+  "listener_script": "/mnt/shared/agent_listener.py",
+  "listener_log": "/home/longshot/.netwatch/logs/listener.log",
+  "respond_log": "/home/longshot/.netwatch/logs/respond.log",
+  "watchdog_log": "/home/longshot/.netwatch/logs/watchdog.log",
+  "responder_backend": "codex",
+  "codex_bin": "/usr/local/bin/codex",
+  "codex_model": "gpt-5.4",
+  "claude_bin": "/home/longshot/.local/bin/claude",
+  "claude_model": "claude-haiku-4-5-20251001",
+  "cwd": "/home/longshot/keystone",
+  "role": "validation and CLI agent — task tracking, config verification, cross-VM consistency checks",
+  "teammates": [
+    { "name": "necto", "ip": "192.168.2.11", "vmid": "105" },
+    { "name": "vega", "ip": "192.168.2.15", "vmid": "107" },
+    { "name": "human", "ip": "192.168.2.16", "vmid": null }
+  ]
+}

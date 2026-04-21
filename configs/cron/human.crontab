@@ -1,0 +1,2 @@
+*/2 * * * * /home/longshot/tunnel_watch.sh
+*/5 * * * * /home/longshot/netwatch/netwatch --once >> /home/longshot/.netwatch/logs/cron.log 2>&1

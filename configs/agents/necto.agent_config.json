@@ -1,0 +1,25 @@
+{
+  "name": "necto",
+  "vmid": "105",
+  "host_suffix": ".11",
+  "peers": ["vega", "keystone"],
+  "chat_url": "http://192.168.2.16:5000",
+  "local_log": "/home/longshot/necto/agent_chat.log",
+  "universal_log": "/mnt/shared/UNIVERSAL_CHAT.log",
+  "status_flag": "/tmp/agent_send_status.flag",
+  "pos_file": "/tmp/agent_chat_pos.txt",
+  "backoff_file": "/tmp/agent_watchdog_backoff.txt",
+  "listener_script": "/mnt/shared/agent_listener.py",
+  "listener_log": "/home/longshot/.netwatch/logs/listener.log",
+  "respond_log": "/home/longshot/.netwatch/logs/respond.log",
+  "watchdog_log": "/home/longshot/.netwatch/logs/watchdog.log",
+  "claude_bin": "/home/longshot/.local/bin/claude",
+  "claude_model": "claude-sonnet-4-6",
+  "cwd": "/home/longshot/necto",
+  "role": "network intelligence — LAN scanning, host fingerprinting, infrastructure monitoring",
+  "teammates": [
+    { "name": "vega", "ip": "192.168.2.15", "vmid": "107" },
+    { "name": "keystone", "ip": "192.168.2.14", "vmid": "106" },
+    { "name": "human", "ip": "192.168.2.16", "vmid": null }
+  ]
+}

@@ -1,0 +1,6 @@
+*/5 * * * * /home/longshot/netwatch/netwatch --once >> /home/longshot/.netwatch/logs/cron.log 2>&1
+* * * * * python3 /mnt/shared/agent_watchdog.py >> /home/longshot/.netwatch/logs/watchdog.log 2>&1
+* * * * * python3 /mnt/shared/agent_respond.py >> /home/longshot/.netwatch/logs/respond.log 2>&1
+* * * * * sleep 30 && python3 /mnt/shared/agent_respond.py >> /home/longshot/.netwatch/logs/respond.log 2>&1
+*/5 * * * * python3 /mnt/shared/agent_status.py >> /home/longshot/.netwatch/logs/respond.log 2>&1
+@reboot python3 /mnt/shared/agent_listener.py >> /home/longshot/<agent>/agent_chat.log 2>&1

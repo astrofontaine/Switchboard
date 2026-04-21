@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# netwatch/install.sh — install all dependencies for the netwatch stack
+# Run once as a sudoer: ./install.sh
+
+set -euo pipefail
+
+log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
+
+if ! command -v apt-get >/dev/null 2>&1; then
+    log "install.sh currently supports apt-based Linux hosts only."
+    log "On macOS, use ./netwatch for interactive runs instead of install.sh."
+    exit 1
+fi
+
+# ── APT packages ─────────────────────────────────────────────────────────────
+APT_PKGS=(
+    nmap            # TCP/UDP port scan + OS/service detection
+    arp-scan        # fast ARP-based LAN discovery
+    fping           # parallel ICMP sweep
+    masscan         # high-speed port scanner
+    netdiscover     # passive/active ARP discovery
+    net-tools       # arp(8) command — used by arp_table discovery technique
+    snmp            # snmpwalk / snmpget for device enumeration
+    smbclient       # SMB/CIFS share enumeration
+    sshpass         # non-interactive SSH password (accessor fallback)
+    python3-venv        # venv support for the ./netwatch wrapper script
+    python3-paramiko    # SSH in Python (netwatch + Collector)
+    python3-scapy       # raw-packet sniffing / ARP
+    python3-cryptography # Fernet vault encryption
+)
+
+log "Updating apt cache..."
+sudo apt-get update -qq
+
+log "Installing: ${APT_PKGS[*]}"
+sudo apt-get install -y "${APT_PKGS[@]}"
+
+# ── Python packages (pip, user-level) ────────────────────────────────────────
+# paramiko via apt above covers netwatch + Collector; add extras here if needed
+#PIP_PKGS=(requests)
+#log "Installing Python packages: ${PIP_PKGS[*]}"
+#pip3 install --quiet --user "${PIP_PKGS[@]}"
+
+# ── Runtime directories ───────────────────────────────────────────────────────
+NWDIR="$HOME/.netwatch"
+mkdir -p "$NWDIR/logs"
+chmod 700 "$NWDIR"
+
+log "Created $NWDIR"
+
+# ── Cron entry (every 5 minutes) ─────────────────────────────────────────────
+CRON_CMD="*/5 * * * * $HOME/netwatch/netwatch --once >> $NWDIR/logs/cron.log 2>&1"
+# Only add if not already present
+if crontab -l 2>/dev/null | grep -qF "$HOME/netwatch/netwatch --once"; then
+    log "Cron entry already present — skipping."
+else
+    (crontab -l 2>/dev/null; echo "$CRON_CMD") | crontab -
+    log "Cron entry added: $CRON_CMD"
+fi
+
+log "Installation complete."
+log "Next: run  ~/netwatch/netwatch --add-cred  to populate the vault."

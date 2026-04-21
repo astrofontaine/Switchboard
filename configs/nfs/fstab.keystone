@@ -1,0 +1,4 @@
+192.168.2.16:/home/longshot/shared /mnt/shared nfs defaults,_netdev 0 0
+192.168.2.16:/home/longshot /mnt/homes/human nfs defaults,_netdev,nofail 0 0
+192.168.2.11:/home/longshot /mnt/homes/necto nfs defaults,_netdev,nofail 0 0
+192.168.2.15:/home/longshot /mnt/homes/vega nfs defaults,_netdev,nofail 0 0

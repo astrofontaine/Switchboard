@@ -1,0 +1,2 @@
+/home/longshot/shared 192.168.2.0/24(rw,sync,no_subtree_check)
+/home/longshot 192.168.2.0/24(rw,sync,no_subtree_check)

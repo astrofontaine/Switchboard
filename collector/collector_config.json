@@ -1,0 +1,20 @@
+{
+  "connection": {
+    "access_method": "ssh",
+    "host": "127.0.0.1",
+    "port": 22,
+    "username": "XXXXXXX",
+    "password": "XXXXXXX",
+    "timeout_seconds": 20,
+    "prompt": "$"
+  },
+  "commands": [
+    "ifconfig",
+    "arp -a",
+    "netstat -an"
+  ],
+  "output": {
+    "path": "./output",
+    "default_filename": "collector_output.txt"
+  }
+}
