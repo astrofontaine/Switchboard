@@ -9,6 +9,7 @@ from collections import defaultdict, deque
 
 from flask import Flask, jsonify, render_template_string, request
 from flask_socketio import SocketIO, emit
+from switchboard_host_commands import configure_executor, enqueue_command, handle_host_command, interrupt_shell, is_host_command, should_enqueue
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "lanparty"
@@ -136,6 +137,53 @@ def _record_event(event, persist=False):
         _append_jsonl_event(event)
 
 
+def _emit_cmd_event(cmd_event, channel="debug"):
+    from datetime import datetime
+
+    text = cmd_event["text"] if isinstance(cmd_event, dict) else str(cmd_event)
+    if isinstance(cmd_event, dict):
+        channel = _normalize_channel(cmd_event.get("channel", channel))
+        text = cmd_event.get("display_text", text)
+    ts = datetime.now().strftime("%H:%M:%S")
+    event = {
+        "kind": "msg",
+        "channel": channel,
+        "id": _msg_id("cmd", text, ts, channel),
+        "name": "cmd",
+        "text": text,
+        "ts": ts,
+    }
+    if isinstance(cmd_event, dict):
+        event["cmd"] = {k: v for k, v in cmd_event.items() if k != "text"}
+    _record_event(event, persist=True)
+    sio.emit("msg", {"id": event["id"], "channel": channel, "name": "cmd", "text": text, "ts": ts})
+
+
+def _emit_debug_cmd_event(cmd_event):
+    if not isinstance(cmd_event, dict):
+        return
+    if cmd_event.get("channel") == "debug":
+        return
+    debug_event = dict(cmd_event)
+    debug_event["channel"] = "debug"
+    debug_event.pop("display_text", None)
+    _emit_cmd_event(debug_event)
+
+
+def _emit_cmd_events(cmd_events):
+    user_visible = {"request", "stdout", "stderr", "timeout", "canceled", "failed"}
+    for cmd_event in cmd_events:
+        if not isinstance(cmd_event, dict):
+            _emit_cmd_event(cmd_event)
+            continue
+        if cmd_event.get("kind") in user_visible:
+            _emit_cmd_event(cmd_event)
+        _emit_debug_cmd_event(cmd_event)
+
+
+configure_executor(lambda cmd_event: _emit_cmd_events([cmd_event]))
+
+
 def _load_history():
     if os.path.exists(REPLAY_JSONL) and os.path.getsize(REPLAY_JSONL) > 0:
         with open(REPLAY_JSONL, errors="ignore") as fh:
@@ -188,6 +236,9 @@ PAGE = """<!doctype html><html><head>
   #channel-note{margin-left:auto;font-size:12px;color:var(--muted)}
   #log{flex:1;overflow-y:auto;padding:12px 14px;border-bottom:1px solid var(--line)}
   .msg{margin:4px 0;line-height:1.45}
+  .cmdmsg{margin:7px 0}
+  .cmdmeta{color:#60758d;font-size:12px;margin-bottom:2px}
+  .cmdtext{display:block;margin:3px 0 0 0;white-space:pre;overflow-x:auto;max-width:100%;font:inherit;line-height:1.35;color:var(--text)}
   .ts{color:#60758d}
   .name{color:var(--accent)}
   .badge{display:inline-block;margin-left:8px;padding:1px 6px;border:1px solid #3b4e68;border-radius:999px;color:var(--muted);font-size:11px}
@@ -242,6 +293,16 @@ function renderEvent(d){
   div.className='msg';
   if(d.kind==='system'){
     div.innerHTML='<span class="system">*** '+esc(d.text)+' ***</span>';
+  } else if(d.name==='cmd'){
+    div.className='msg cmdmsg';
+    const meta=document.createElement('div');
+    meta.className='cmdmeta';
+    meta.textContent='['+d.ts+'] cmd';
+    const pre=document.createElement('pre');
+    pre.className='cmdtext';
+    pre.textContent=String(d.text);
+    div.appendChild(meta);
+    div.appendChild(pre);
   } else {
     div.innerHTML='<span class="ts">['+esc(d.ts)+']</span> <span class="name">'+esc(d.name)+'</span>: '+esc(d.text)+'<span class="badge">'+esc(d.channel)+'</span>';
   }
@@ -363,6 +424,13 @@ def on_msg(data):
         _SEEN[mid] = time.time() + 60
     USERS[request.sid] = name
     sio.emit("who", [v for v in USERS.values() if v != "?"])
+    if is_host_command(text):
+        cmd_events = handle_host_command(name, text, channel=channel)
+        _emit_cmd_events(cmd_events)
+        if should_enqueue(cmd_events):
+            enqueue_command(cmd_events[0]["cmd_id"])
+        return
+    interrupt_shell(channel, name)
     event = {
         "kind": "msg",
         "channel": channel,
