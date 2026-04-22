@@ -46,6 +46,7 @@ This repo reflects the live runtime layout observed on 2026-04-20:
 - automatic routing of agent conversational traffic into `agents room`
 - automatic routing of system/status noise into `debug`
 - per-channel HTTP history endpoints
+- debug-level `/host <cmd>` command execution from the chat UI
 
 It now supports environment-based paths for replay/history files:
 
@@ -54,6 +55,22 @@ It now supports environment-based paths for replay/history files:
 - `SWITCHBOARD_LEGACY_REPLAY_LOG`
 - `SWITCHBOARD_REPLAY_JSONL`
 - `SWITCHBOARD_SECRET_KEY`
+
+Host command execution lives outside the core chat server in
+`switchboard/switchboard_host_commands.py`. It defaults to a denylist policy,
+keeps command output in the room where the command was issued, mirrors lifecycle
+details into `debug`, and preserves multiline stdout/stderr formatting. The
+executor uses a short-lived bash worker so simple pipelines such as
+`/host ls -l /mnt/shared | tail -10` work, while redirection, command chaining,
+shell substitution, backgrounding, obvious shell wrappers, and destructive
+first-token commands remain blocked. The worker exits after 10 seconds idle or
+when normal chat activity interrupts the room.
+
+Host command environment knobs:
+
+- `SWITCHBOARD_HOST_LABEL`
+- `SWITCHBOARD_HOST_WORKDIR`
+- `SWITCHBOARD_HOST_POLICY` (`denylist` by default, `allowlist` available)
 
 ### 2. Shared Agent Stack
 
