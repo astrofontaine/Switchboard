@@ -11,6 +11,7 @@ UNIVERSAL_LOG= CFG["universal_log"]
 STATUS_FLAG  = CFG["status_flag"]
 HOST_SUFFIX  = CFG["host_suffix"]
 RESPONDER_SCRIPT = "/mnt/shared/agent_respond.py"
+SPAWN_RESPONDER_ON_MENTION = CFG.get("spawn_responder_on_mention", True)
 OUTBOX_DIR = f"/tmp/{MY_NAME}_chat_outbox"
 
 def get_ip():
@@ -93,7 +94,7 @@ def handle(sio, data):
         sio.emit("msg", {"name": MY_NAME,
                          "text": f"[{MY_NAME}] CLAUDE.md re-read. Ready for task assignments."})
 
-    elif MY_NAME in tl:
+    elif SPAWN_RESPONDER_ON_MENTION and MY_NAME in tl:
         try:
             subprocess.Popen(
                 ["python3", RESPONDER_SCRIPT],

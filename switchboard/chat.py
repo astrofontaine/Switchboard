@@ -37,6 +37,7 @@ HISTORY = defaultdict(list)
 
 CHAT_LINE_RE = re.compile(r"^\[(?P<ts>[^\]]+)\] <(?P<name>[^>]+)> (?P<text>.*)$")
 SYSTEM_LINE_RE = re.compile(r"^\[system\] (?P<text>.*)$")
+MENTION_TOKEN_RE = re.compile(r"^@([A-Za-z0-9_.-]+)$")
 
 
 def _msg_id(name, text, ts, channel):
@@ -90,6 +91,40 @@ def _classify_channel(name, text, kind, requested_channel=None):
     if name.lower() in AGENT_NAMES:
         return "agents"
     return "main"
+
+
+def _parse_targets(text):
+    known_targets = set(AGENT_NAMES) | {"human", "qwen"}
+    tokens = text.strip().split()
+    targets = []
+    unresolved_targets = []
+    saw_everyone = False
+    for token in tokens:
+        match = MENTION_TOKEN_RE.match(token)
+        if not match:
+            break
+        target = match.group(1).lower()
+        if target == "everyone":
+            saw_everyone = True
+            continue
+        if target in known_targets:
+            targets.append(target)
+        else:
+            unresolved_targets.append(target)
+    targets = sorted(set(targets))
+    unresolved_targets = sorted(set(unresolved_targets))
+    if saw_everyone:
+        target_mode = "everyone"
+        targets = []
+    elif targets or unresolved_targets:
+        target_mode = "targeted"
+    else:
+        target_mode = "broadcast"
+    return {
+        "targets": targets,
+        "target_mode": target_mode,
+        "unresolved_targets": unresolved_targets,
+    }
 
 
 def _parse_text_log_line(line):
@@ -424,6 +459,7 @@ def on_msg(data):
         _SEEN[mid] = time.time() + 60
     USERS[request.sid] = name
     sio.emit("who", [v for v in USERS.values() if v != "?"])
+    target_meta = _parse_targets(text)
     if is_host_command(text):
         cmd_events = handle_host_command(name, text, channel=channel)
         _emit_cmd_events(cmd_events)
@@ -438,9 +474,25 @@ def on_msg(data):
         "name": name,
         "text": text,
         "ts": ts,
+        "targets": target_meta["targets"],
+        "target_mode": target_meta["target_mode"],
+        "unresolved_targets": target_meta["unresolved_targets"],
     }
     _record_event(event, persist=True)
-    emit("msg", {"id": mid, "channel": channel, "name": name, "text": text, "ts": ts}, broadcast=True)
+    emit(
+        "msg",
+        {
+            "id": mid,
+            "channel": channel,
+            "name": name,
+            "text": text,
+            "ts": ts,
+            "targets": target_meta["targets"],
+            "target_mode": target_meta["target_mode"],
+            "unresolved_targets": target_meta["unresolved_targets"],
+        },
+        broadcast=True,
+    )
 
 
 if __name__ == "__main__":

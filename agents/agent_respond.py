@@ -11,12 +11,23 @@ BACKEND = CFG.get("responder_backend")
 if not BACKEND:
     BACKEND = "codex" if CFG.get("name") == "keystone" else "claude"
 
-SCRIPT_MAP = {
-    "claude": "/mnt/shared/agent_respond_claude.py",
-    "codex": "/mnt/shared/agent_respond_codex.py",
+SCRIPT_CANDIDATES = {
+    "claude": [
+        "/home/longshot/Switchboard/agents/agent_respond_claude.py",
+        "/mnt/shared/agent_respond_claude.py",
+    ],
+    "codex": [
+        "/home/longshot/Switchboard/agents/agent_respond_codex.py",
+        "/mnt/shared/agent_respond_codex.py",
+    ],
 }
 
-script = CFG.get("responder_script") or SCRIPT_MAP.get(BACKEND)
+script = CFG.get("responder_script")
+if not script:
+    for candidate in SCRIPT_CANDIDATES.get(BACKEND, []):
+        if os.path.exists(candidate):
+            script = candidate
+            break
 if not script:
     print(f"Unknown responder backend: {BACKEND}", file=sys.stderr)
     sys.exit(2)

@@ -34,7 +34,7 @@ def main():
     agent = cfg["name"]
     chat_url = cfg.get("chat_url", "http://192.168.2.16:5000")
     chat_log = os.path.expanduser(cfg.get("local_log", f"~/{agent}/agent_chat.log"))
-    listener_script = cfg.get("listener_script", "/mnt/shared/agent_listener.py")
+    listener_script = cfg.get("listener_script", "/home/longshot/Switchboard/agents/agent_listener.py")
     backend = cfg.get("responder_backend", "claude")
 
     try:
