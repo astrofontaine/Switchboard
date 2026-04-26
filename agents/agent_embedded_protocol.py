@@ -90,10 +90,23 @@ def parse_trigger(my_name: str, msg: NormalizedMessage) -> Trigger | None:
     lower_name = my_name.lower()
     if msg.name.lower() == lower_name:
         return None
-    if not text.lower().startswith(f"@{lower_name}"):
-        return None
+    rest: str | None = None
+    lower_text = text.lower()
+    if lower_text.startswith(f"@{lower_name}"):
+        rest = text[len(my_name) + 1 :].strip()
+    else:
+        plain_mention = re.match(
+            rf"^{re.escape(my_name)}(?:[:,]|\s)\s*(.*)$",
+            text,
+            re.IGNORECASE,
+        )
+        if plain_mention:
+            rest = plain_mention.group(1).strip()
+        else:
+            return None
 
-    rest = text[len(my_name) + 1 :].strip()
+    if not rest:
+        return None
     low = rest.lower()
 
     if low == "debug":
@@ -117,4 +130,3 @@ def command_words(command: str) -> list[str]:
         return shlex.split(command)
     except ValueError:
         return []
-
