@@ -3,6 +3,11 @@
 import glob, json, os, re, socket, socketio, time, random, subprocess
 
 CFG = json.load(open(os.path.expanduser("~/agent_config.json")))
+if CFG.get("runtime_mode", "legacy") == "embedded":
+    from agent_embedded_runtime import main as embedded_main
+
+    raise SystemExit(embedded_main())
+
 MY_NAME      = CFG["name"]
 VMID         = CFG["vmid"]
 CHAT_URL     = CFG["chat_url"]

@@ -36,6 +36,7 @@ def main():
     chat_log = os.path.expanduser(cfg.get("local_log", f"~/{agent}/agent_chat.log"))
     listener_script = cfg.get("listener_script", "/home/longshot/Switchboard/agents/agent_listener.py")
     backend = cfg.get("responder_backend", "claude")
+    runtime_mode = cfg.get("runtime_mode", "legacy")
 
     try:
         r = run(["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", chat_url])
@@ -48,7 +49,7 @@ def main():
 
     try:
         age = time.time() - os.path.getmtime(chat_log)
-        checks.append(("log_fresh_<180s", age < 180))
+        checks.append(("log_fresh_<180s", runtime_mode == "embedded" or age < 180))
     except Exception:
         checks.append(("log_fresh_<180s", False))
 
@@ -57,7 +58,10 @@ def main():
     checks.append(("netwatch_state_or_cron", exists("~/.netwatch/hosts.json") or "/netwatch/netwatch" in cron))
     checks.append(("cron_listener_at_reboot", "agent_listener.py" in cron))
     checks.append(("cron_watchdog", "agent_watchdog.py" in cron))
-    checks.append(("cron_respond_dispatcher", "agent_respond.py" in cron))
+    if runtime_mode == "embedded":
+        checks.append(("cron_respond_dispatcher_disabled", "agent_respond.py" not in cron))
+    else:
+        checks.append(("cron_respond_dispatcher", "agent_respond.py" in cron))
 
     r = run(["mountpoint", "-q", "/mnt/shared"])
     checks.append(("nfs_mounted", r.returncode == 0))

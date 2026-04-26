@@ -16,6 +16,7 @@
   "network_source_of_truth": "/home/longshot/.netwatch/hosts.json",
   "forbid_vmid_to_ip_inference": true,
   "require_live_ip_verification_if_missing": true,
+  "runtime_mode": "embedded",
   "claude_bin": "/home/longshot/.local/bin/claude",
   "claude_model": "claude-haiku-4-5-20251001",
   "cwd": "/home/longshot/vega",

@@ -9,6 +9,7 @@ LOCAL_LOG       = CFG["local_log"]
 UNIVERSAL_LOG   = CFG["universal_log"]
 BACKOFF_FILE    = CFG["backoff_file"]
 CHAT_URL        = CFG["chat_url"]
+RUNTIME_MODE    = CFG.get("runtime_mode", "legacy")
 STALE_SECS      = 120
 
 def log(msg):
@@ -21,9 +22,23 @@ def log(msg):
             pass
 
 def get_pids():
-    r = subprocess.run(["pgrep", "-f", os.path.basename(LISTENER_SCRIPT)],
-                       capture_output=True, text=True)
-    return [int(p) for p in r.stdout.strip().splitlines() if p]
+    script = os.path.abspath(os.path.expanduser(LISTENER_SCRIPT))
+    r = subprocess.run(
+        ["ps", "-C", "python3", "-o", "pid=,args="],
+        capture_output=True,
+        text=True,
+    )
+    pids = []
+    for line in r.stdout.splitlines():
+        parts = line.strip().split(None, 1)
+        if len(parts) != 2:
+            continue
+        pid_text, args = parts
+        words = args.split()
+        if len(words) >= 2 and os.path.basename(words[0]).startswith("python3"):
+            if os.path.abspath(os.path.expanduser(words[1])) == script:
+                pids.append(int(pid_text))
+    return pids
 
 def log_is_stale():
     try:
@@ -76,6 +91,10 @@ def main():
                 pass
         log(f"killed {len(pids)-1} duplicate listener(s)")
         pids = [sorted(pids)[-1]]
+
+    if pids and RUNTIME_MODE == "embedded":
+        clear_backoff()
+        return
 
     if pids and not log_is_stale():
         clear_backoff()
